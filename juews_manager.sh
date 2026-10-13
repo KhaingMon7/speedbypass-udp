@@ -2,15 +2,15 @@
 
 # Constants
 AGN_WEBSOCKET_SERVICE="agn-websocket"
-PYTHON_SCRIPT_PATH="/opt/agn_websocket/agn_websocket.py"
+PYTHON_SCRIPT_PATH="/opt/jue_websocket/jue_websocket.py"
 
 # Function to display banner
 display_banner() {
    cat << "EOF"
 *************************************************
 *                                               *
-*                  Jue Htet Script                  *
-*        Visit me on Telegram: @Juevpn       *
+*                  Jue Htet Script              *
+*        Visit me on Telegram: @Juevpn          *
 *                                               *
 *************************************************
 EOF
@@ -115,7 +115,6 @@ change_listening_port() {
        sed -i "s/^LISTENING_PORT = .*/LISTENING_PORT = $new_port/" "$PYTHON_SCRIPT_PATH"
        echo "Websocket listening port changed to $new_port."
 
-       # Restart WebSocket service
        restart_websocket_service
    else
        echo "Error: File $PYTHON_SCRIPT_PATH not found."
@@ -126,7 +125,7 @@ change_listening_port() {
 restart_websocket_service() {
    echo "Restarting $AGN_WEBSOCKET_SERVICE service..."
    systemctl restart $AGN_WEBSOCKET_SERVICE
-   systemctl status $AGN_WEBSOCKET_SERVICE --no-pager  # Optionally, show status after restarting
+   systemctl status $AGN_WEBSOCKET_SERVICE --no-pager
 }
 
 # Function to uninstall proxy script
@@ -138,8 +137,8 @@ uninstall_proxy_script() {
    systemctl disable $AGN_WEBSOCKET_SERVICE
 
    echo "Removing Python proxy files..."
-   rm -rf "/opt/agn_websocket"
-   rm /usr/local/bin/websocket
+   rm -rf "/opt/jue_websocket"
+   rm -f /usr/local/bin/websocket
 
    echo "Removing systemd service file..."
    rm -f "/etc/systemd/system/$AGN_WEBSOCKET_SERVICE.service"
@@ -152,14 +151,12 @@ server_information() {
    echo "Server Information:"
    echo
 
-   # Check if service is active
    if systemctl is-active --quiet $AGN_WEBSOCKET_SERVICE; then
        echo "WebSocket Service Status: Active"
    else
        echo "WebSocket Service Status: Inactive"
    fi
 
-   # Display current listening port if script file exists
    if [ -f "$PYTHON_SCRIPT_PATH" ]; then
        current_port=$(grep -oP '(?<=LISTENING_PORT = )[0-9]+' "$PYTHON_SCRIPT_PATH")
        echo "Current Listening Port: $current_port"
