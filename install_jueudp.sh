@@ -48,6 +48,7 @@ FORCE=""
 LOCAL_FILE=""
 FORCE_NO_ROOT=""
 FORCE_NO_SYSTEMD=""
+OPERATION=""
 
 # Utility functions
 has_command() {
@@ -481,8 +482,6 @@ tpl_hysteria_server_x_service() {
     tpl_hysteria_server_service_base '%i'
 }
 
-
-
 tpl_etc_hysteria_config_json() {
     local_users=$(fetch_users)
 
@@ -501,25 +500,24 @@ tpl_etc_hysteria_config_json() {
   "down_mbps": 100,
   "disable_udp": false,
   "insecure": true,
-  "obfs": "$OBFS",
+  "obfs": {
+    "password": "$OBFS"
+  },
   "auth": {
- 	"mode": "passwords",
-  "config": [
+    "mode": "passwords",
+    "config": [
       "$(echo $local_users)"
     ]
-         }
+  }
 }
 EOF
 }
-
-
 
 setup_db() {
     echo "Setting up database"
     mkdir -p "$(dirname "$USER_DB")"
 
     if [[ ! -f "$USER_DB" ]]; then
-        # Create the database file
         sqlite3 "$USER_DB" ".databases"
         if [[ $? -ne 0 ]]; then
             echo "Error: Unable to create database file at $USER_DB"
@@ -527,7 +525,6 @@ setup_db() {
         fi
     fi
 
-    # Create the users table
     sqlite3 "$USER_DB" <<EOF
 CREATE TABLE IF NOT EXISTS users (
     username TEXT PRIMARY KEY,
@@ -535,12 +532,10 @@ CREATE TABLE IF NOT EXISTS users (
 );
 EOF
 
-    # Check if the table 'users' was created successfully
     table_exists=$(sqlite3 "$USER_DB" "SELECT name FROM sqlite_master WHERE type='table' AND name='users';")
     if [[ "$table_exists" == "users" ]]; then
         echo "Database setup completed successfully. Table 'users' exists."
         
-        # Add a default user if not already exists
         default_username="default"
         default_password="password"
         user_exists=$(sqlite3 "$USER_DB" "SELECT username FROM users WHERE username='$default_username';")
@@ -557,13 +552,11 @@ EOF
         fi
     else
         echo "Error: Table 'users' was not created successfully."
-        # Show the database schema for debugging
         echo "Current database schema:"
         sqlite3 "$USER_DB" ".schema"
         exit 1
     fi
 }
-
 
 fetch_users() {
     DB_PATH="/etc/hysteria/udpusers.db"
@@ -571,7 +564,6 @@ fetch_users() {
         sqlite3 "$DB_PATH" "SELECT username || ':' || password FROM users;" | paste -sd, -
     fi
 }
-
 
 perform_install_hysteria_binary() {
     if [[ -n "$LOCAL_FILE" ]]; then
@@ -655,12 +647,7 @@ perform_install_manager_script() {
     echo "You can now run the manager using the 'jueudp' command."
 }
 
-
 is_hysteria_installed() {
-    # RETURN VALUE
-    # 0: hysteria is installed
-    # 1: hysteria is not installed
-    
     if [[ -f "$EXECUTABLE_INSTALL_PATH" || -h "$EXECUTABLE_INSTALL_PATH" ]]; then
         return 0
     fi
@@ -711,10 +698,10 @@ perform_install() {
     fi
 
     perform_install_hysteria_binary
-    perform_install_hysteria_example_config
+    setup_ssl
     perform_install_hysteria_home_legacy
     perform_install_hysteria_systemd
-    setup_ssl
+    perform_install_hysteria_example_config
     start_services
     perform_install_manager_script
 
