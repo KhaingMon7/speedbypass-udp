@@ -5,7 +5,6 @@ PYTHON_SCRIPT_URL="https://raw.githubusercontent.com/KhaingMon7/speedbypass-udp/
 AGN_MANAGER_SCRIPT_URL="https://raw.githubusercontent.com/KhaingMon7/speedbypass-udp/main/juews_manager.sh"
 INSTALL_DIR="/opt/jue_websocket"
 SYSTEMD_SERVICE_FILE="/etc/systemd/system/agn-websocket.service"
-PYTHON_BIN=$(command -v python3)  # Ensure python3 is available
 AGN_MANAGER_SCRIPT="juews_manager.sh"
 AGN_MANAGER_PATH="$INSTALL_DIR/$AGN_MANAGER_SCRIPT"
 AGN_MANAGER_LINK="/usr/local/bin/websocket"
@@ -14,9 +13,9 @@ AGN_MANAGER_LINK="/usr/local/bin/websocket"
 install_required_packages() {
     echo "Installing required packages..."
     apt-get update
-    apt-get install -y python3-pip dos2unix wget
+    apt-get install -y python3 python3-pip dos2unix wget
     pip3 install --upgrade pip
-    pip3 install websocket-client  # Adjust with other required packages as needed
+    pip3 install websocket-client
 }
 
 # Function to download Python proxy script using wget
@@ -27,7 +26,7 @@ download_agn_websocket() {
 
 # Function to download juews_manager.sh script using wget
 download_agnws_manager() {
-    echo "Downloading $JUE_MANAGER_SCRIPT from $JUE_MANAGER_SCRIPT_URL..."
+    echo "Downloading $AGN_MANAGER_SCRIPT from $AGN_MANAGER_SCRIPT_URL..."
     wget -O "$AGN_MANAGER_PATH" "$AGN_MANAGER_SCRIPT_URL"
     chmod +x "$AGN_MANAGER_PATH"
     ln -sf "$AGN_MANAGER_PATH" "$AGN_MANAGER_LINK"
@@ -45,7 +44,7 @@ convert_to_unix_line_endings() {
 start_systemd_service() {
     echo "Starting agn-websocket service..."
     systemctl start agn-websocket
-    systemctl status agn-websocket --no-pager  # Optionally, show status after starting
+    systemctl status agn-websocket --no-pager
 }
 
 # Function to install systemd service
@@ -57,7 +56,7 @@ Description=Python Proxy Service
 After=network.target
 
 [Service]
-ExecStart=$PYTHON_BIN $INSTALL_DIR/agn_websocket.py 8098
+ExecStart=/usr/bin/python3 $INSTALL_DIR/jue_websocket.py 8098
 Restart=always
 User=root
 Group=root
@@ -76,8 +75,8 @@ display_banner() {
     cat << "EOF"
 **********************************************
 *                                            *
-*                JUE HTET                  *
-*      Visit me on Telegram: @Juevpn      *
+*                JUE HTET                    *
+*      Visit me on Telegram: @Juevpn         *
 *                                            *
 **********************************************
 EOF
@@ -88,7 +87,7 @@ EOF
 display_installation_summary() {
     echo "Installation completed successfully!"
     echo
-    echo "Installed agn_websocket.py in: $INSTALL_DIR"
+    echo "Installed jue_websocket.py in: $INSTALL_DIR"
     echo "Installed $AGN_MANAGER_SCRIPT in: $AGN_MANAGER_PATH"
     echo "You can now manage the WebSocket service using 'websocket menu' command."
 }
@@ -101,6 +100,7 @@ main() {
     install_required_packages
 
     # Check if python3 is available
+    PYTHON_BIN=$(command -v python3)
     if [ -z "$PYTHON_BIN" ]; then
         echo "Error: Python 3 is not installed or not found in PATH. Please install Python 3."
         exit 1
@@ -113,7 +113,7 @@ main() {
     # Download Python proxy script
     download_agn_websocket
 
-    # Download agnws_manager.sh script
+    # Download manager script
     download_agnws_manager
 
     # Install systemd service
